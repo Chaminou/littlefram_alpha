@@ -109,7 +109,7 @@ class Divisor(Operator) :
         return self.input1.compute() / self.input2.compute()
 
     def derivate(self, symbol) :
-        return Divisor([Substractor([Multiplicator([self.input1.derivate(symbol), self.input2]), Multiplicator([self.input1, self.input2.derivate(symbol)])]), Power([self.input2, Scalar(2)])])
+        return Divisor([Substractor([Multiplicator([self.input1.derivate(symbol), self.input2]), Multiplicator([self.input1, self.input2.derivate(symbol)])]), Power([self.input2, Scalar([2])])])
 
 class Power(Operator) :
     def __init__(self, input):
@@ -129,45 +129,49 @@ class Power(Operator) :
         else :
             raise NotImplementedError
 
-class Logarithm(Node) :
-    def __init__(self, input, base=None) :
+class LogarithmNeperien(Node) :
+    def __init__(self, input) :
         self.input = input[0]
-        if base == None :
-            self.base = np.e
-        elif isinstace(base, Scalar) :
-            self.base  = base.value
-        else :
-            self.base = base
         self.update_symbol()
 
     def update_symbol(self) :
-        self.symbol = '(log[' + str(self.base) + '](' + self.input.update_symbol() + ')'
+        self.symbol = '(ln(' + self.input.update_symbol() + '))'
         return self.symbol
 
     def compute(self) :
-        return np.log(self.input.compute()) / np.log(self.base)
+        return np.log(self.input.compute())
 
     def derivate(self, symbol) :
-        return Divisor([self.input.derivate(symbol), Multiplicator([self.input, Scalar([np.log(self.base)])])])
+        return Divisor([self.input.derivate(symbol), self.input])
+
+class Logarithm(Node) :
+    def __init__(self, input) :
+        self.input = input[0]
+        if input[1] == None :
+            self.base = Scalar([np.e])
+        else :
+            self.base = input[1]
+        self.update_symbol()
+
+    def update_symbol(self) :
+        self.symbol = '(log[' + self.base.update_symbol() + '](' + self.input.update_symbol() + '))'
+        return self.symbol
+
+    def compute(self) :
+        return np.log(self.input.compute()) / np.log(self.base.compute())
+
+    def derivate(self, symbol) :
+        return Divisor([LogarithmNeperien([self.input]), LogarithmNeperien([self.base])]).derivate(symbol)
 
 
 if __name__ == '__main__' :
 
-    # ((((x^(10))+(x^(-2)))+(x^(7.5)))+(19)) .derivate(x) =>
-    # ((((((10)*(x^(9)))*(1))+(((-2)*(x^(-3)))*(1)))+(((7.5)*(x^(6.5)))*(1)))+(0))
+    x = Placeholder('x', 2)
+    u = Placeholder('u', 3)
+    f2 = Power([x, Scalar([2])])
+    u2 = Multiplicator([u, Scalar([2])])
+    log = Logarithm([f2, u2])
 
-    x = Placeholder('x', None)
-    power1 = Scalar([10])
-    power2 = Scalar([-2])
-    power3 = Scalar([7.5])
-    d = Scalar([19])
-
-    a = Power([x, power1])
-    b = Power([x, power2])
-    c = Power([x, power3])
-    sum1 = Sommator([a, b])
-    sum2 = Sommator([sum1, c])
-    sum3 = Sommator([sum2, d])
-
-    print(sum3.update_symbol())
-    print(sum3.derivate('x').update_symbol())
+    print(log.update_symbol())
+    print(log.compute())
+    print(log.derivate('u').update_symbol())
