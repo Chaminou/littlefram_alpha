@@ -163,15 +163,69 @@ class Logarithm(Node) :
     def derivate(self, symbol) :
         return Divisor([LogarithmNeperien([self.input]), LogarithmNeperien([self.base])]).derivate(symbol)
 
+class Cos(Node) :
+    def __init__(self, input) :
+        self.input = input[0]
+        self.update_symbol()
+
+    def update_symbol(self) :
+        self.symbol = '(cos(' + self.input.update_symbol() + '))'
+        return self.symbol
+
+    def compute(self) :
+        return np.cos(self.input.compute())
+
+    def derivate(self, symbol) :
+        return Multiplicator([Multiplicator([Scalar([-1]), Sin([self.input])]), self.input.derivate(symbol)])
+
+class Sin(Node) :
+    def __init__(self, input) :
+        self.input = input[0]
+        self.update_symbol()
+
+    def update_symbol(self) :
+        self.symbol = '(sin(' + self.input.update_symbol() + '))'
+        return self.symbol
+
+    def compute(self) :
+        return np.sin(self.input.compute())
+
+    def derivate(self, symbol) :
+        return Multiplicator([Cos([self.input]), self.input.derivate(symbol)])
+
+class Tan(Node) :
+    def __init__(self, input) :
+        self.input = input[0]
+        self.update_symbol()
+
+    def update_symbol(self) :
+        self.symbol = '(tan(' + self.input.update_symbol() + '))'
+        return self.symbol
+
+    def compute(self) :
+        return np.tan(self.input.compute())
+
+    def derivate(self, symbol) :
+        return Divisor([Sin([self.input]), Cos([self.input])]).derivate(symbol)
+
 
 if __name__ == '__main__' :
 
-    x = Placeholder('x', 2)
+    x = Placeholder('x', np.pi)
     u = Placeholder('u', 3)
-    f2 = Power([x, Scalar([2])])
-    u2 = Multiplicator([u, Scalar([2])])
-    log = Logarithm([f2, u2])
 
-    print(log.update_symbol())
-    print(log.compute())
-    print(log.derivate('u').update_symbol())
+    f1 = Sin([x])
+    f2 = Cos([f1])
+    t = Tan([x])
+
+    print(f1.update_symbol())
+    print(f1.compute())
+    print(f1.derivate('x').update_symbol())
+
+    print(f2.update_symbol())
+    print(f2.compute())
+    print(f2.derivate('x').update_symbol())
+
+    print(t.update_symbol())
+    print(t.compute())
+    print(t.derivate('x').update_symbol())
