@@ -14,6 +14,12 @@ class Node :
     def derivate(self) :
         raise NotImplementedError
 
+    def derivate_n(self, symbol, n) :
+        expression = self
+        for i in range(n) :
+            expression = expression.derivate(symbol)
+        return expression
+
 class Placeholder(Node):
     def __init__(self, symbol, value=None) :
         self.symbol = symbol
@@ -220,12 +226,4 @@ if __name__ == '__main__' :
 
     print(f1.update_symbol())
     print(f1.compute())
-    print(f1.derivate('x').update_symbol())
-
-    print(f2.update_symbol())
-    print(f2.compute())
-    print(f2.derivate('x').update_symbol())
-
-    print(t.update_symbol())
-    print(t.compute())
-    print(t.derivate('x').update_symbol())
+    print(f1.derivate_n('x', 2).update_symbol())
