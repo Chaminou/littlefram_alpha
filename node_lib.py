@@ -1,4 +1,6 @@
 
+import numpy as np
+
 class Node :
     def __init__(self):
         raise NotImplementedError
@@ -25,13 +27,13 @@ class Placeholder(Node):
 
     def derivate(self, symbol) :
         if self.symbol == symbol :
-            return Scalar(1)
+            return Scalar([1])
         else :
-            return Scalar(0)
+            return Scalar([0])
 
 class Scalar(Node) :
     def __init__(self, value) :
-        self.value = value
+        self.value = value[0]
         self.update_symbol()
 
     def update_symbol(self) :
@@ -42,7 +44,7 @@ class Scalar(Node) :
         return self.value
 
     def derivate(self, symbol) :
-        return Scalar(0)
+        return Scalar([0])
 
 class Operator(Node) :
     def __init__(self, input) :
@@ -55,7 +57,7 @@ class Sommator(Operator):
         self.update_symbol()
 
     def update_symbol(self) :
-        self.symbol = '(' + str(self.input1.update_symbol()) + "+" +str(self.input2.update_symbol()) + ')'
+        self.symbol = '(' + self.input1.update_symbol() + "+" + self.input2.update_symbol() + ')'
         return self.symbol
 
     def compute(self) :
@@ -70,7 +72,7 @@ class Substractor(Operator):
         self.update_symbol()
 
     def update_symbol(self) :
-        self.symbol = '(' + str(self.input1.update_symbol()) + "-" +str(self.input2.update_symbol()) + ')'
+        self.symbol = '(' + self.input1.update_symbol() + "-" + self.input2.update_symbol() + ')'
         return self.symbol
 
     def compute(self) :
@@ -85,7 +87,7 @@ class Multiplicator(Operator) :
         self.update_symbol()
 
     def update_symbol(self) :
-        self.symbol = '(' + str(self.input1.update_symbol()) + "*" +str(self.input2.update_symbol()) + ')'
+        self.symbol = '(' + self.input1.update_symbol() + "*" + self.input2.update_symbol() + ')'
         return self.symbol
 
     def compute(self) :
@@ -100,7 +102,7 @@ class Divisor(Operator) :
         self.update_symbol()
 
     def update_symbol(self) :
-        self.symbol = '(' + str(self.input1.update_symbol()) + "/" +str(self.input2.update_symbol()) + ')'
+        self.symbol = '(' + self.input1.update_symbol() + "/" + self.input2.update_symbol() + ')'
         return self.symbol
 
     def compute(self) :
@@ -115,27 +117,57 @@ class Power(Operator) :
         self.update_symbol()
 
     def update_symbol(self) :
-        self.symbol = '(' + str(self.input1.update_symbol()) + "^" +str(self.input2.update_symbol()) + ')'
+        self.symbol = '(' + self.input1.update_symbol() + "^" + self.input2.update_symbol() + ')'
         return self.symbol
 
     def compute(self) :
         return self.input1.compute() ** self.input2.compute()
 
-    def derivate(self) :
-        return NotImplementedError
+    def derivate(self, symbol) :
+        if isinstance(self.input2, Scalar) :
+            return Multiplicator([Multiplicator([self.input2, Power([self.input1, Scalar([self.input2.value - 1])])]), self.input1.derivate(symbol)])
+        else :
+            raise NotImplementedError
 
-class Logarithm(Operator) :
-    def __init__(self, input, base) :
-        super().__init__(input)
-        raise NotImplementedError
+class Logarithm(Node) :
+    def __init__(self, input, base=None) :
+        self.input = input[0]
+        if base == None :
+            self.base = np.e
+        elif isinstace(base, Scalar) :
+            self.base  = base.value
+        else :
+            self.base = base
+        self.update_symbol()
+
+    def update_symbol(self) :
+        self.symbol = '(log[' + str(self.base) + '](' + self.input.update_symbol() + ')'
+        return self.symbol
+
+    def compute(self) :
+        return np.log(self.input.compute()) / np.log(self.base)
+
+    def derivate(self, symbol) :
+        return Divisor([self.input.derivate(symbol), Multiplicator([self.input, Scalar([np.log(self.base)])])])
 
 
 if __name__ == '__main__' :
-    x = Placeholder('x', 10)
-    y = Placeholder('y', 20)
-    nombre = Scalar(-4)
-    sommateur = Sommator((x, y))
-    multiplicateur = Multiplicator((sommateur, nombre))
 
-    print(multiplicateur.update_symbol())
-    print(multiplicateur.derivate('x').update_symbol())
+    # ((((x^(10))+(x^(-2)))+(x^(7.5)))+(19)) .derivate(x) =>
+    # ((((((10)*(x^(9)))*(1))+(((-2)*(x^(-3)))*(1)))+(((7.5)*(x^(6.5)))*(1)))+(0))
+
+    x = Placeholder('x', None)
+    power1 = Scalar([10])
+    power2 = Scalar([-2])
+    power3 = Scalar([7.5])
+    d = Scalar([19])
+
+    a = Power([x, power1])
+    b = Power([x, power2])
+    c = Power([x, power3])
+    sum1 = Sommator([a, b])
+    sum2 = Sommator([sum1, c])
+    sum3 = Sommator([sum2, d])
+
+    print(sum3.update_symbol())
+    print(sum3.derivate('x').update_symbol())
