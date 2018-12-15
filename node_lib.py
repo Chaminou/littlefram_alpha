@@ -186,6 +186,14 @@ class Multiplicator(Operator) :
             return input1
         elif isinstance(input1, Scalar) and isinstance(input2, Scalar):
             return Scalar([self.compute()])
+        elif isinstance(input1, Power) and isinstance(input2, Power) and (input1.input1 == input2.input1):
+            return Power([input1.input1, Sommator([input1.input2, input2.input2])]).reduce()
+        elif isinstance(input1, Power) and (input1.input1 == input2):
+            return Power([input1.input1, Sommator([input1.input2, Scalar([1])])]).reduce()
+        elif isinstance(input2, Power) and (input1 == input2.input1):
+            return Power([input2.input1, Sommator([input2.input2, Scalar([1])])]).reduce()
+        elif input1 == input2:
+            return Power([input1, Scalar([2])]).reduce()
         else:
             return Multiplicator([input1, input2])
 
