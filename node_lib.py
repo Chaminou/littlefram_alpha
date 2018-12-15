@@ -181,7 +181,7 @@ class Multiplicator(Operator) :
         if isinstance(input1, Scalar) and isinstance(input2, Scalar):
             return Scalar([self.compute()])
         else:
-            return Multiplicator([input1.reduce(), input2.reduce()])
+            return Multiplicator([input1, input2])
 
     def update_symbol(self) :
         self.symbol = '(' + self.input1.update_symbol() + "*" + self.input2.update_symbol() + ')'
@@ -213,7 +213,7 @@ class Divisor(Operator) :
         if isinstance(input1, Scalar) and isinstance(input2, Scalar):
             return Scalar([self.compute()])
         else:
-            return Divisor([input1.reduce(), input2.reduce()])
+            return Divisor([input1, input2])
 
     def update_symbol(self) :
         self.symbol = '(' + self.input1.update_symbol() + "/" + self.input2.update_symbol() + ')'
@@ -239,7 +239,7 @@ class Power(Operator) :
         if isinstance(input1, Scalar) and isinstance(input2, Scalar):
             return Scalar([self.compute()])
         else:
-            return Power([input1.reduce(), input2.reduce()])
+            return Power([input1, input2])
 
     def update_symbol(self) :
         self.symbol = '(' + self.input1.update_symbol() + "^" + self.input2.update_symbol() + ')'
@@ -263,12 +263,11 @@ class LogarithmNeperien(Node) :
         return 2
 
     def reduce(self):
-        input1 = self.input1.reduce()
-        input2 = self.input2.reduce()
-        if isinstance(input1, Scalar) and isinstance(input2, Scalar):
+        input = self.input.reduce()
+        if isinstance(input, Scalar):
             return Scalar([self.compute()])
         else:
-            return LogarithmNeperien([input1.reduce(), input2.reduce()])
+            return LogarithmNeperien([input])
 
     def update_symbol(self) :
         self.symbol = '(ln(' + self.input.update_symbol() + '))'
@@ -293,12 +292,12 @@ class Logarithm(Node) :
         return 2
 
     def reduce(self):
-        input1 = self.input1.reduce()
-        input2 = self.input2.reduce()
+        input1 = self.input.reduce()
+        input2 = self.base.reduce()
         if isinstance(input1, Scalar) and isinstance(input2, Scalar):
             return Scalar([self.compute()])
         else:
-            return Logarithm([input1.reduce(), input2.reduce()])
+            return Logarithm([input1, input2])
 
     def update_symbol(self) :
         self.symbol = '(log[' + self.base.update_symbol() + '](' + self.input.update_symbol() + '))'
