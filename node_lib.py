@@ -153,7 +153,7 @@ class LogarithmNeperien(Node) :
 class Logarithm(Node) :
     def __init__(self, input) :
         self.input = input[0]
-        if input[1] == None :
+        if len(input) < 2 :
             self.base = Scalar([np.e])
         else :
             self.base = input[1]
