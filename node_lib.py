@@ -5,6 +5,9 @@ class Node :
     def __init__(self):
         raise NotImplementedError
 
+    def sign(self):
+        raise NotImplementedError
+
     def reduce(self) :
         raise NotImplementedError
 
@@ -28,6 +31,9 @@ class Placeholder(Node):
         self.symbol = symbol
         self.value = value
 
+    def sign(self):
+        return 2
+
     def reduce(self) :
         return self
 
@@ -47,6 +53,14 @@ class Scalar(Node) :
     def __init__(self, value) :
         self.value = value[0]
         self.update_symbol()
+
+    def sign(self):
+        if self.value < 0:
+            return -1
+        elif self.value == 0:
+            return 0
+        else:
+            return 1
 
     def reduce(self) :
         return self
@@ -73,6 +87,16 @@ class Sommator(Operator):
     def __init__(self, input):
         super().__init__(input)
         self.update_symbol()
+
+    def sign(self):
+        if self.input1.sign() == self.input2.sign():
+            return self.input1.sign()
+        elif self.input1.sign() == 0:
+            return self.input2.sign()
+        elif self.input2.sign() == 0:
+            return self.input1.sign()
+        else:
+            return 2
 
     def reduce(self) :
         input1 = self.input1.reduce()
@@ -105,6 +129,16 @@ class Substractor(Operator):
         super().__init__(input)
         self.update_symbol()
 
+    def sign(self):
+        if self.input1.sign() == -self.input2.sign():
+            return self.input1.sign()
+        elif self.input1.sign() == 0:
+            return -self.input2.sign()
+        elif self.input2.sign() == 0:
+            return self.input1.sign()
+        else:
+            return 2
+
     def reduce(self) :
         input1 = self.input1.reduce()
         input2 = self.input2.reduce()
@@ -134,6 +168,13 @@ class Multiplicator(Operator) :
         super().__init__(input)
         self.update_symbol()
 
+    def sign(self):
+        sign = self.input1.sign() * self.input2.sign()
+        if (sign >= -1) and (sign <= 1):
+            return sign
+        else:
+            return 2
+
     def reduce(self):
         input1 = self.input1.reduce()
         input2 = self.input2.reduce()
@@ -157,6 +198,15 @@ class Divisor(Operator) :
         super().__init__(input)
         self.update_symbol()
 
+    def sign(self):
+        sign = self.input1.sign() * self.input2.sign()
+        if (sign == -1) or (sign == 1) or ((sign == 0) and (self.input2.sign() != 0)):
+            return sign
+        elif self.input2.sign() == 0:
+            return np.nan
+        else:
+            return 2
+
     def reduce(self):
         input1 = self.input1.reduce()
         input2 = self.input2.reduce()
@@ -179,6 +229,9 @@ class Power(Operator) :
     def __init__(self, input):
         super().__init__(input)
         self.update_symbol()
+
+    def sign(self):
+        return 1
 
     def reduce(self):
         input1 = self.input1.reduce()
@@ -205,6 +258,9 @@ class LogarithmNeperien(Node) :
     def __init__(self, input) :
         self.input = input[0]
         self.update_symbol()
+
+    def sign(self):
+        return 2
 
     def reduce(self):
         input1 = self.input1.reduce()
@@ -233,6 +289,9 @@ class Logarithm(Node) :
             self.base = input[1]
         self.update_symbol()
 
+    def sign(self):
+        return 2
+
     def reduce(self):
         input1 = self.input1.reduce()
         input2 = self.input2.reduce()
@@ -256,6 +315,9 @@ class Cos(Node) :
         self.input = input[0]
         self.update_symbol()
 
+    def sign(self):
+        return 2
+
     def reduce(self):
         return Cos([self.input.reduce()])
 
@@ -274,6 +336,9 @@ class Sin(Node) :
         self.input = input[0]
         self.update_symbol()
 
+    def sign(self):
+        return 2
+
     def reduce(self):
         return Sin([self.input.reduce()])
 
@@ -291,6 +356,9 @@ class Tan(Node) :
     def __init__(self, input) :
         self.input = input[0]
         self.update_symbol()
+
+    def sign(self):
+        return 2
 
     def reduce(self):
         return Tan([self.input.reduce()])
