@@ -14,9 +14,6 @@ class Node :
     def derivate(self) :
         raise NotImplementedError
 
-    def reduce(self) :
-        raise NotImplementedError
-
     def derivate_n(self, symbol, n) :
         expression = self
         for i in range(n) :
