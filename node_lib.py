@@ -230,6 +230,12 @@ class Divisor(Operator) :
             return input1
         elif isinstance(input1, Scalar) and isinstance(input2, Scalar):
             return Scalar([self.compute()])
+        elif isinstance(input1, Divisor) and isinstance(input2, Divisor):
+            return Divisor([Multiplicator([input1.input1, input2.input2]), Multiplicator([input1.input2, input2.input1])]).reduce()
+        elif isinstance(input1, Divisor):
+            return Divisor([input1.input1, Multiplicator([input1.input2, input2])]).reduce()
+        elif isinstance(input2, Divisor):
+            return Divisor([Multiplicator([input1, input2.input2]), input2.input1]).reduce()
         else:
             return Divisor([input1, input2])
 
