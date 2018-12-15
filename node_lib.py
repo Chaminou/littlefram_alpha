@@ -141,7 +141,10 @@ class LogarithmNeperien(Node) :
         return self.symbol
 
     def compute(self) :
-        return np.log(self.input.compute())
+        if self.input.compute() > 0 :
+            return np.log(self.input.compute())
+        else :
+            return np.nan
 
     def derivate(self, symbol) :
         return Divisor([self.input.derivate(symbol), self.input])
@@ -160,7 +163,10 @@ class Logarithm(Node) :
         return self.symbol
 
     def compute(self) :
-        return np.log(self.input.compute()) / np.log(self.base.compute())
+        if self.input.compute() > 0 :
+            return np.log(self.input.compute()) / np.log(self.base.compute())
+        else :
+            return np.nan
 
     def derivate(self, symbol) :
         return Divisor([LogarithmNeperien([self.input]), LogarithmNeperien([self.base])]).derivate(symbol)
