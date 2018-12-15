@@ -247,8 +247,10 @@ class Power(Operator) :
     def reduce(self):
         input1 = self.input1.reduce()
         input2 = self.input2.reduce()
-        if isinstance(input2) and (input2.compute() == 0):
+        if isinstance(input2, Scalar) and (input2.compute() == 0):
             return Scalar([1])
+        elif isinstance(input2, Scalar) and (input2.compute() == 1):
+            return input1
         elif isinstance(input1, Scalar) and isinstance(input2, Scalar):
             return Scalar([self.compute()])
         else:
