@@ -14,6 +14,9 @@ class Node :
     def derivate(self) :
         raise NotImplementedError
 
+    def reduce(self) :
+        raise NotImplementedError
+
     def derivate_n(self, symbol, n) :
         expression = self
         for i in range(n) :
@@ -135,21 +138,6 @@ class Power(Operator) :
         else :
             raise NotImplementedError
 
-class LogarithmNeperien(Node) :
-    def __init__(self, input) :
-        self.input = input[0]
-        self.update_symbol()
-
-    def update_symbol(self) :
-        self.symbol = '(ln(' + self.input.update_symbol() + '))'
-        return self.symbol
-
-    def compute(self) :
-        return np.log(self.input.compute())
-
-    def derivate(self, symbol) :
-        return Divisor([self.input.derivate(symbol), self.input])
-
 class Logarithm(Node) :
     def __init__(self, input) :
         self.input = input[0]
@@ -168,6 +156,14 @@ class Logarithm(Node) :
 
     def derivate(self, symbol) :
         return Divisor([LogarithmNeperien([self.input]), LogarithmNeperien([self.base])]).derivate(symbol)
+
+class LogarithmNeperien(Logarithm) :
+    def update_symbol(self) :
+        self.symbol = '(ln(' + self.input.update_symbol() + '))'
+        return self.symbol
+
+    def derivate(self, symbol) :
+        return Divisor([self.input.derivate(symbol), self.input])
 
 class Cos(Node) :
     def __init__(self, input) :
