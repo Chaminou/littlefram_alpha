@@ -5,6 +5,9 @@ class Node :
     def __init__(self):
         raise NotImplementedError
 
+    def reduce(self) :
+        raise NotImplementedError
+
     def update_symbol(self) :
         raise NotImplementedError
 
@@ -25,6 +28,9 @@ class Placeholder(Node):
         self.symbol = symbol
         self.value = value
 
+    def reduce(self) :
+        return self
+
     def update_symbol(self) :
         return self.symbol
 
@@ -42,6 +48,9 @@ class Scalar(Node) :
         self.value = value[0]
         self.update_symbol()
 
+    def reduce(self) :
+        return self
+
     def update_symbol(self) :
         self.symbol = '(' + str(self.value) + ')'
         return self.symbol
@@ -52,6 +61,9 @@ class Scalar(Node) :
     def derivate(self, symbol) :
         return Scalar([0])
 
+    def negate(self) :
+        return Scalar([-self.value])
+
 class Operator(Node) :
     def __init__(self, input) :
         self.input1 = input[0]
@@ -61,6 +73,22 @@ class Sommator(Operator):
     def __init__(self, input):
         super().__init__(input)
         self.update_symbol()
+
+    def reduce(self) :
+        input1 = self.input1.reduce()
+        input2 = self.input2.reduce()
+        if isinstance(input1, Scalar) and isinstance(input2, Scalar):
+            return Scalar([self.compute()])
+        elif isinstance(input1, Scalar) and (input1.compute() == 0):
+            return input2
+        elif isinstance(input2, Scalar) and (input2.compute() == 0):
+            return input1
+        elif isinstance(input2, Scalar) and (input2.compute() < 0):
+            return Substractor([input1, input2.negate()]).reduce()
+        elif isinstance(input1, Scalar) and (input1.compute() < 0):
+            return Substractor([input2, input1.negate()]).reduce()
+        else:
+            return Sommator([input1, input2])
 
     def update_symbol(self) :
         self.symbol = '(' + self.input1.update_symbol() + "+" + self.input2.update_symbol() + ')'
@@ -77,6 +105,20 @@ class Substractor(Operator):
         super().__init__(input)
         self.update_symbol()
 
+    def reduce(self) :
+        input1 = self.input1.reduce()
+        input2 = self.input2.reduce()
+        if isinstance(input1, Scalar) and isinstance(input2, Scalar):
+            return Scalar([self.compute()])
+        elif isinstance(input2, Scalar) and (input2.compute() == 0):
+            return input1
+        elif isinstance(input2, Scalar) and (input2.compute() < 0):
+            return Sommator([input1, input2.negate()]).reduce()
+        elif isinstance(input1, Scalar) and (input1.compute() < 0):
+            return Sommator([input2, input1.negate()]).reduce()
+        else:
+            return Substractor([input1, input2])
+
     def update_symbol(self) :
         self.symbol = '(' + self.input1.update_symbol() + "-" + self.input2.update_symbol() + ')'
         return self.symbol
@@ -91,6 +133,14 @@ class Multiplicator(Operator) :
     def __init__(self, input):
         super().__init__(input)
         self.update_symbol()
+
+    def reduce(self):
+        input1 = self.input1.reduce()
+        input2 = self.input2.reduce()
+        if isinstance(input1, Scalar) and isinstance(input2, Scalar):
+            return Scalar([self.compute()])
+        else:
+            return Multiplicator([input1.reduce(), input2.reduce()])
 
     def update_symbol(self) :
         self.symbol = '(' + self.input1.update_symbol() + "*" + self.input2.update_symbol() + ')'
@@ -107,6 +157,14 @@ class Divisor(Operator) :
         super().__init__(input)
         self.update_symbol()
 
+    def reduce(self):
+        input1 = self.input1.reduce()
+        input2 = self.input2.reduce()
+        if isinstance(input1, Scalar) and isinstance(input2, Scalar):
+            return Scalar([self.compute()])
+        else:
+            return Divisor([input1.reduce(), input2.reduce()])
+
     def update_symbol(self) :
         self.symbol = '(' + self.input1.update_symbol() + "/" + self.input2.update_symbol() + ')'
         return self.symbol
@@ -121,6 +179,14 @@ class Power(Operator) :
     def __init__(self, input):
         super().__init__(input)
         self.update_symbol()
+
+    def reduce(self):
+        input1 = self.input1.reduce()
+        input2 = self.input2.reduce()
+        if isinstance(input1, Scalar) and isinstance(input2, Scalar):
+            return Scalar([self.compute()])
+        else:
+            return Power([input1.reduce(), input2.reduce()])
 
     def update_symbol(self) :
         self.symbol = '(' + self.input1.update_symbol() + "^" + self.input2.update_symbol() + ')'
@@ -139,6 +205,14 @@ class LogarithmNeperien(Node) :
     def __init__(self, input) :
         self.input = input[0]
         self.update_symbol()
+
+    def reduce(self):
+        input1 = self.input1.reduce()
+        input2 = self.input2.reduce()
+        if isinstance(input1, Scalar) and isinstance(input2, Scalar):
+            return Scalar([self.compute()])
+        else:
+            return LogarithmNeperien([input1.reduce(), input2.reduce()])
 
     def update_symbol(self) :
         self.symbol = '(ln(' + self.input.update_symbol() + '))'
@@ -159,6 +233,14 @@ class Logarithm(Node) :
             self.base = input[1]
         self.update_symbol()
 
+    def reduce(self):
+        input1 = self.input1.reduce()
+        input2 = self.input2.reduce()
+        if isinstance(input1, Scalar) and isinstance(input2, Scalar):
+            return Scalar([self.compute()])
+        else:
+            return Logarithm([input1.reduce(), input2.reduce()])
+
     def update_symbol(self) :
         self.symbol = '(log[' + self.base.update_symbol() + '](' + self.input.update_symbol() + '))'
         return self.symbol
@@ -173,6 +255,9 @@ class Cos(Node) :
     def __init__(self, input) :
         self.input = input[0]
         self.update_symbol()
+
+    def reduce(self):
+        return Cos([self.input.reduce()])
 
     def update_symbol(self) :
         self.symbol = '(cos(' + self.input.update_symbol() + '))'
@@ -189,6 +274,9 @@ class Sin(Node) :
         self.input = input[0]
         self.update_symbol()
 
+    def reduce(self):
+        return Sin([self.input.reduce()])
+
     def update_symbol(self) :
         self.symbol = '(sin(' + self.input.update_symbol() + '))'
         return self.symbol
@@ -203,6 +291,9 @@ class Tan(Node) :
     def __init__(self, input) :
         self.input = input[0]
         self.update_symbol()
+
+    def reduce(self):
+        return Tan([self.input.reduce()])
 
     def update_symbol(self) :
         self.symbol = '(tan(' + self.input.update_symbol() + '))'
