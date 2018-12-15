@@ -178,7 +178,15 @@ class Multiplicator(Operator) :
     def reduce(self):
         input1 = self.input1.reduce()
         input2 = self.input2.reduce()
-        if isinstance(input1, Scalar) and isinstance(input2, Scalar):
+        if isinstance(input1, Scalar) and (input1.compute() == 0):
+            return Scalar([0])
+        elif isinstance(input1, Scalar) and (input1.compute() == 1):
+            return input2
+        elif isinstance(input2, Scalar) and (input2.compute() == 0):
+            return Scalar([0])
+        elif isinstance(input2, Scalar) and (input2.compute() == 1):
+            return input1
+        elif isinstance(input1, Scalar) and isinstance(input2, Scalar):
             return Scalar([self.compute()])
         else:
             return Multiplicator([input1, input2])
@@ -210,7 +218,11 @@ class Divisor(Operator) :
     def reduce(self):
         input1 = self.input1.reduce()
         input2 = self.input2.reduce()
-        if isinstance(input1, Scalar) and isinstance(input2, Scalar):
+        if isinstance(input1, Scalar) and (input1.compute() == 0):
+            return Scalar([0])
+        elif isinstance(input2, Scalar) and (input2.compute() == 1):
+            return input1
+        elif isinstance(input1, Scalar) and isinstance(input2, Scalar):
             return Scalar([self.compute()])
         else:
             return Divisor([input1, input2])
@@ -231,12 +243,15 @@ class Power(Operator) :
         self.update_symbol()
 
     def sign(self):
-        return 1
+        if input2.sign() <= 1:
+            return 1
 
     def reduce(self):
         input1 = self.input1.reduce()
         input2 = self.input2.reduce()
-        if isinstance(input1, Scalar) and isinstance(input2, Scalar):
+        if isinstance(input2) and (input2.compute() == 0):
+            return Scalar([1])
+        elif isinstance(input1, Scalar) and isinstance(input2, Scalar):
             return Scalar([self.compute()])
         else:
             return Power([input1, input2])
