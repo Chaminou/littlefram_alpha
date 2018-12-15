@@ -249,6 +249,8 @@ class Power(Operator) :
         self.update_symbol()
 
     def sign(self):
+        input1 = self.input1.reduce()
+        input2 = self.input2.reduce()
         if input2.sign() <= 1:
             return 1
 
