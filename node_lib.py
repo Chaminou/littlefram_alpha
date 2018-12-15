@@ -103,13 +103,13 @@ class Sommator(Operator):
         input2 = self.input2.reduce()
         if isinstance(input1, Scalar) and isinstance(input2, Scalar):
             return Scalar([self.compute()])
-        elif isinstance(input1, Scalar) and (input1.compute() == 0):
+        elif input1.sign() == 0:
             return input2
-        elif isinstance(input2, Scalar) and (input2.compute() == 0):
+        elif input2.sign() == 0:
             return input1
-        elif isinstance(input2, Scalar) and (input2.compute() < 0):
+        elif isinstance(input2, Scalar) and (input2.sign() == -1):
             return Substractor([input1, input2.negate()]).reduce()
-        elif isinstance(input1, Scalar) and (input1.compute() < 0):
+        elif isinstance(input1, Scalar) and (input1.sign() == -1):
             return Substractor([input2, input1.negate()]).reduce()
         else:
             return Sommator([input1, input2])
@@ -144,12 +144,10 @@ class Substractor(Operator):
         input2 = self.input2.reduce()
         if isinstance(input1, Scalar) and isinstance(input2, Scalar):
             return Scalar([self.compute()])
-        elif isinstance(input2, Scalar) and (input2.compute() == 0):
+        elif input2.sign() == 0:
             return input1
-        elif isinstance(input2, Scalar) and (input2.compute() < 0):
+        elif isinstance(input2, Scalar) and (input2.sign() == -1):
             return Sommator([input1, input2.negate()]).reduce()
-        elif isinstance(input1, Scalar) and (input1.compute() < 0):
-            return Sommator([input2, input1.negate()]).reduce()
         else:
             return Substractor([input1, input2])
 
