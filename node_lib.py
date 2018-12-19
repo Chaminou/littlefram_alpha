@@ -1,4 +1,3 @@
-
 import numpy as np
 
 class Node :
@@ -130,10 +129,7 @@ class Power(Operator) :
         return self.input1.compute() ** self.input2.compute()
 
     def derivate(self, symbol) :
-        if isinstance(self.input2, Scalar) :
-            return Multiplicator([Multiplicator([self.input2, Power([self.input1, Scalar([self.input2.value - 1])])]), self.input1.derivate(symbol)])
-        else :
-            raise NotImplementedError
+        return Multiplicator([Sommator([Multiplicator([self.input1.derivate(symbol), self.input2]), Multiplicator([Multiplicator([self.input2.derivate(symbol), self.input1]), LogarithmNeperien([self.input1])])]), Power([self.input1, Substractor([self.input2, Scalar([1])])])])
 
 class Logarithm(Node) :
     def __init__(self, input) :
@@ -149,7 +145,10 @@ class Logarithm(Node) :
         return self.symbol
 
     def compute(self) :
-        return np.log(self.input.compute()) / np.log(self.base.compute())
+        if self.input.compute() > 0 :
+            return np.log(self.input.compute()) / np.log(self.base.compute())
+        else :
+            return np.nan
 
     def derivate(self, symbol) :
         return Divisor([LogarithmNeperien([self.input]), LogarithmNeperien([self.base])]).derivate(symbol)
