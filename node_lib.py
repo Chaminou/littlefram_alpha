@@ -131,28 +131,10 @@ class Power(Operator) :
     def derivate(self, symbol) :
         return Multiplicator([Sommator([Multiplicator([self.input1.derivate(symbol), self.input2]), Multiplicator([Multiplicator([self.input2.derivate(symbol), self.input1]), LogarithmNeperien([self.input1])])]), Power([self.input1, Substractor([self.input2, Scalar([1])])])])
 
-class LogarithmNeperien(Node) :
-    def __init__(self, input) :
-        self.input = input[0]
-        self.update_symbol()
-
-    def update_symbol(self) :
-        self.symbol = '(ln(' + self.input.update_symbol() + '))'
-        return self.symbol
-
-    def compute(self) :
-        if self.input.compute() > 0 :
-            return np.log(self.input.compute())
-        else :
-            return np.nan
-
-    def derivate(self, symbol) :
-        return Divisor([self.input.derivate(symbol), self.input])
-
 class Logarithm(Node) :
     def __init__(self, input) :
         self.input = input[0]
-        if input[1] == None :
+        if len(input) < 2 :
             self.base = Scalar([np.e])
         else :
             self.base = input[1]
@@ -170,6 +152,14 @@ class Logarithm(Node) :
 
     def derivate(self, symbol) :
         return Divisor([LogarithmNeperien([self.input]), LogarithmNeperien([self.base])]).derivate(symbol)
+
+class LogarithmNeperien(Logarithm) :
+    def update_symbol(self) :
+        self.symbol = '(ln(' + self.input.update_symbol() + '))'
+        return self.symbol
+
+    def derivate(self, symbol) :
+        return Divisor([self.input.derivate(symbol), self.input])
 
 class Cos(Node) :
     def __init__(self, input) :
