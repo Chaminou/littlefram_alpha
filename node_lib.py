@@ -129,14 +129,14 @@ class Substractor(Operator):
         self.update_symbol()
 
     def sign(self):
-        sign1 = self.input1.sign() if self.input1.sign() != None else None
-        sign2 = self.input2.sign() if self.input2.sign() != None else None
-        if self.input1.sign() == -self.input2.sign():
-            return self.input1.sign()
-        elif self.input1.sign() == 0:
-            return -self.input2.sign()
-        elif self.input2.sign() == 0:
-            return self.input1.sign()
+        sign1 = self.input1.sign() if self.input1.sign() != None else 2
+        sign2 = self.input2.sign() if self.input2.sign() != None else 2
+        if sign1 == -sign2:
+            return sign1 if sign1 != 2 else None
+        elif sign1 == 0:
+            return -sign2 if sign2 != 2 else None
+        elif sign2 == 0:
+            return sign1 if sign1 != 2 else None
         else:
             return None
 
@@ -260,7 +260,7 @@ class Power(Operator) :
         self.update_symbol()
 
     def sign(self):
-        if input1.sign() == 1:
+        if self.input1.sign() == 1:
             return 1
         else:
             return None
