@@ -31,7 +31,7 @@ class Placeholder(Node):
         self.value = value
 
     def sign(self):
-        return 2
+        return None
 
     def reduce(self) :
         return self
@@ -95,7 +95,7 @@ class Sommator(Operator):
         elif self.input2.sign() == 0:
             return self.input1.sign()
         else:
-            return 2
+            return None
 
     def reduce(self) :
         input1 = self.input1.reduce()
@@ -129,6 +129,8 @@ class Substractor(Operator):
         self.update_symbol()
 
     def sign(self):
+        sign1 = self.input1.sign() if self.input1.sign() != None else None
+        sign2 = self.input2.sign() if self.input2.sign() != None else None
         if self.input1.sign() == -self.input2.sign():
             return self.input1.sign()
         elif self.input1.sign() == 0:
@@ -136,7 +138,7 @@ class Substractor(Operator):
         elif self.input2.sign() == 0:
             return self.input1.sign()
         else:
-            return 2
+            return None
 
     def reduce(self) :
         input1 = self.input1.reduce()
@@ -166,11 +168,13 @@ class Multiplicator(Operator) :
         self.update_symbol()
 
     def sign(self):
-        sign = self.input1.sign() * self.input2.sign()
+        sign1 = self.input1.sign() if self.input1.sign() != None else 2
+        sign2 = self.input2.sign() if self.input2.sign() != None else 2
+        sign = sign1 * sign2
         if (sign >= -1) and (sign <= 1):
             return sign
         else:
-            return 2
+            return None
 
     def reduce(self):
         input1 = self.input1.reduce()
@@ -212,13 +216,15 @@ class Divisor(Operator) :
         self.update_symbol()
 
     def sign(self):
-        sign = self.input1.sign() * self.input2.sign()
+        sign1 = self.input1.sign() if self.input1.sign() != None else 2
+        sign2 = self.input2.sign() if self.input2.sign() != None else 2
+        sign = sign1 * sign2
         if (sign == -1) or (sign == 1) or ((sign == 0) and (self.input2.sign() != 0)):
             return sign
         elif self.input2.sign() == 0:
             return np.nan
         else:
-            return 2
+            return None
 
     def reduce(self):
         input1 = self.input1.reduce()
@@ -254,10 +260,10 @@ class Power(Operator) :
         self.update_symbol()
 
     def sign(self):
-        input1 = self.input1.reduce()
-        input2 = self.input2.reduce()
-        if input2.sign() <= 1:
+        if input1.sign() == 1:
             return 1
+        else:
+            return None
 
     def reduce(self):
         input1 = self.input1.reduce()
@@ -291,7 +297,7 @@ class Logarithm(Node) :
         self.update_symbol()
 
     def sign(self):
-        return 2
+        return None
 
     def reduce(self):
         input1 = self.input.reduce()
@@ -328,7 +334,7 @@ class Cos(Node) :
         self.update_symbol()
 
     def sign(self):
-        return 2
+        return None
 
     def reduce(self):
         return Cos([self.input.reduce()])
@@ -349,7 +355,7 @@ class Sin(Node) :
         self.update_symbol()
 
     def sign(self):
-        return 2
+        return None
 
     def reduce(self):
         return Sin([self.input.reduce()])
@@ -370,7 +376,7 @@ class Tan(Node) :
         self.update_symbol()
 
     def sign(self):
-        return 2
+        return None
 
     def reduce(self):
         return Tan([self.input.reduce()])
