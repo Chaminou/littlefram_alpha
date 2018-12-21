@@ -229,7 +229,7 @@ class Divisor(Operator) :
     def reduce(self):
         input1 = self.input1.reduce()
         input2 = self.input2.reduce()
-        if isinstance(input1, Scalar) and (input1.compute() == 0):
+        if input1.sign() == 0:
             return Scalar([0])
         elif isinstance(input2, Scalar) and (input2.compute() == 1):
             return input1
@@ -241,6 +241,8 @@ class Divisor(Operator) :
             return Divisor([input1.input1, Multiplicator([input1.input2, input2])]).reduce()
         elif isinstance(input2, Divisor):
             return Divisor([Multiplicator([input1, input2.input2]), input2.input1]).reduce()
+        elif input1 == input2:
+            return Scalar([1])
         else:
             return Divisor([input1, input2])
 
