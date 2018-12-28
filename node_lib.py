@@ -135,22 +135,6 @@ class Power(Operator) :
     def derivate(self, symbol) :
         return Multiplicator([Power([self.input1, self.input2]), Sommator([Multiplicator([self.input1.derivate(symbol), Divisor([self.input2, self.input1])]), Multiplicator([self.input2.derivate(symbol), LogarithmNeperien([self.input1])])])])
 
-'''
-class LogarithmNeperien(Node) :
-    def __init__(self, input) :
-        self.input = input[0]
-        self.update_symbol()
-
-    def update_symbol(self) :
-        self.symbol = '(ln(' + self.input.update_symbol() + '))'
-        return self.symbol
-
-    def compute(self, feed_dict) :
-        return np.log(self.input.compute(feed_dict))
-
-    def derivate(self, symbol) :
-        return Divisor([self.input.derivate(symbol), self.input])
-'''
 
 class Logarithm(Node) :
     def __init__(self, input) :
