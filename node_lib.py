@@ -8,7 +8,7 @@ class Node :
     def update_symbol(self) :
         raise NotImplementedError
 
-    def compute(self) :
+    def compute(self, feed_dict) :
         raise NotImplementedError
 
     def derivate(self) :
@@ -21,15 +21,17 @@ class Node :
         return expression
 
 class Placeholder(Node):
-    def __init__(self, symbol, value=None) :
+    def __init__(self, symbol) :
         self.symbol = symbol
-        self.value = value
 
     def update_symbol(self) :
         return self.symbol
 
-    def compute(self) :
-        return self.value
+    def compute(self, feed_dict) :
+        try :
+            return feed_dict[self.symbol]
+        except :
+            raise 'YAY'
 
     def derivate(self, symbol) :
         if self.symbol == symbol :
@@ -46,7 +48,7 @@ class Scalar(Node) :
         self.symbol = '(' + str(self.value) + ')'
         return self.symbol
 
-    def compute(self) :
+    def compute(self, feed_dict) :
         return self.value
 
     def derivate(self, symbol) :
@@ -66,8 +68,8 @@ class Sommator(Operator):
         self.symbol = '(' + self.input1.update_symbol() + "+" + self.input2.update_symbol() + ')'
         return self.symbol
 
-    def compute(self) :
-        return self.input1.compute() + self.input2.compute()
+    def compute(self, feed_dict) :
+        return self.input1.compute(feed_dict) + self.input2.compute(feed_dict)
 
     def derivate(self, symbol) :
         return Sommator([self.input1.derivate(symbol), self.input2.derivate(symbol)])
@@ -81,8 +83,8 @@ class Substractor(Operator):
         self.symbol = '(' + self.input1.update_symbol() + "-" + self.input2.update_symbol() + ')'
         return self.symbol
 
-    def compute(self) :
-        return self.input1.compute() - self.input2.compute()
+    def compute(self, feed_dict) :
+        return self.input1.compute(feed_dict) - self.input2.compute(feed_dict)
 
     def derivate(self, symbol) :
         return Substractor([self.input1.derivate(symbol), self.input2.derivate(symbol)])
@@ -96,8 +98,8 @@ class Multiplicator(Operator) :
         self.symbol = '(' + self.input1.update_symbol() + "*" + self.input2.update_symbol() + ')'
         return self.symbol
 
-    def compute(self) :
-        return self.input1.compute() * self.input2.compute()
+    def compute(self, feed_dict) :
+        return self.input1.compute(feed_dict) * self.input2.compute(feed_dict)
 
     def derivate(self, symbol) :
         return Sommator([Multiplicator([self.input1.derivate(symbol), self.input2]), Multiplicator([self.input1, self.input2.derivate(symbol)])])
@@ -111,8 +113,8 @@ class Divisor(Operator) :
         self.symbol = '(' + self.input1.update_symbol() + "/" + self.input2.update_symbol() + ')'
         return self.symbol
 
-    def compute(self) :
-        return self.input1.compute() / self.input2.compute()
+    def compute(self, feed_dict) :
+        return self.input1.compute(feed_dict) / self.input2.compute(feed_dict)
 
     def derivate(self, symbol) :
         return Divisor([Substractor([Multiplicator([self.input1.derivate(symbol), self.input2]), Multiplicator([self.input1, self.input2.derivate(symbol)])]), Power([self.input2, Scalar([2])])])
@@ -126,14 +128,11 @@ class Power(Operator) :
         self.symbol = '(' + self.input1.update_symbol() + "^" + self.input2.update_symbol() + ')'
         return self.symbol
 
-    def compute(self) :
-        return self.input1.compute() ** self.input2.compute()
+    def compute(self, feed_dict) :
+        return self.input1.compute(feed_dict) ** self.input2.compute(feed_dict)
 
     def derivate(self, symbol) :
-        if isinstance(self.input2, Scalar) :
-            return Multiplicator([Multiplicator([self.input2, Power([self.input1, Scalar([self.input2.value - 1])])]), self.input1.derivate(symbol)])
-        else :
-            raise NotImplementedError
+        return Multiplicator([Power([self.input1, self.input2]), Sommator([Multiplicator([self.input1.derivate(symbol), Divisor([self.input2, self.input1])]), Multiplicator([self.input2.derivate(symbol), LogarithmNeperien([self.input1])])])])
 
 class LogarithmNeperien(Node) :
     def __init__(self, input) :
@@ -144,8 +143,8 @@ class LogarithmNeperien(Node) :
         self.symbol = '(ln(' + self.input.update_symbol() + '))'
         return self.symbol
 
-    def compute(self) :
-        return np.log(self.input.compute())
+    def compute(self, feed_dict) :
+        return np.log(self.input.compute(feed_dict))
 
     def derivate(self, symbol) :
         return Divisor([self.input.derivate(symbol), self.input])
@@ -163,8 +162,8 @@ class Logarithm(Node) :
         self.symbol = '(log[' + self.base.update_symbol() + '](' + self.input.update_symbol() + '))'
         return self.symbol
 
-    def compute(self) :
-        return np.log(self.input.compute()) / np.log(self.base.compute())
+    def compute(self, feed_dict) :
+        return np.log(self.input.compute(feed_dict)) / np.log(self.base.compute(feed_dict))
 
     def derivate(self, symbol) :
         return Divisor([LogarithmNeperien([self.input]), LogarithmNeperien([self.base])]).derivate(symbol)
@@ -178,8 +177,8 @@ class Cos(Node) :
         self.symbol = '(cos(' + self.input.update_symbol() + '))'
         return self.symbol
 
-    def compute(self) :
-        return np.cos(self.input.compute())
+    def compute(self, feed_dict) :
+        return np.cos(self.input.compute(feed_dict))
 
     def derivate(self, symbol) :
         return Multiplicator([Multiplicator([Scalar([-1]), Sin([self.input])]), self.input.derivate(symbol)])
@@ -193,8 +192,8 @@ class Sin(Node) :
         self.symbol = '(sin(' + self.input.update_symbol() + '))'
         return self.symbol
 
-    def compute(self) :
-        return np.sin(self.input.compute())
+    def compute(self, feed_dict) :
+        return np.sin(self.input.compute(feed_dict))
 
     def derivate(self, symbol) :
         return Multiplicator([Cos([self.input]), self.input.derivate(symbol)])
@@ -208,8 +207,8 @@ class Tan(Node) :
         self.symbol = '(tan(' + self.input.update_symbol() + '))'
         return self.symbol
 
-    def compute(self) :
-        return np.tan(self.input.compute())
+    def compute(self, feed_dict) :
+        return np.tan(self.input.compute(feed_dict))
 
     def derivate(self, symbol) :
         return Divisor([Sin([self.input]), Cos([self.input])]).derivate(symbol)
@@ -217,13 +216,13 @@ class Tan(Node) :
 
 if __name__ == '__main__' :
 
-    x = Placeholder('x', np.pi)
-    u = Placeholder('u', 3)
+    x = Placeholder('x')
+    u = Placeholder('u')
+    a = Scalar([3])
 
-    f1 = Sin([x])
-    f2 = Cos([f1])
-    t = Tan([x])
+    f1 = Power([x, a]) 
 
     print(f1.update_symbol())
-    print(f1.compute())
-    print(f1.derivate_n('x', 2).update_symbol())
+    print(f1.compute({'x': 2}))
+    print(f1.derivate('x').update_symbol())
+    print(f1.derivate('x').compute({'x':2}))
