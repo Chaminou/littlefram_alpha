@@ -119,6 +119,7 @@ class Divisor(Operator) :
     def derivate(self, symbol) :
         return Divisor([Substractor([Multiplicator([self.input1.derivate(symbol), self.input2]), Multiplicator([self.input1, self.input2.derivate(symbol)])]), Power([self.input2, Scalar([2])])])
 
+
 class Power(Operator) :
     def __init__(self, input):
         super().__init__(input)
@@ -134,6 +135,7 @@ class Power(Operator) :
     def derivate(self, symbol) :
         return Multiplicator([Power([self.input1, self.input2]), Sommator([Multiplicator([self.input1.derivate(symbol), Divisor([self.input2, self.input1])]), Multiplicator([self.input2.derivate(symbol), LogarithmNeperien([self.input1])])])])
 
+'''
 class LogarithmNeperien(Node) :
     def __init__(self, input) :
         self.input = input[0]
@@ -148,11 +150,12 @@ class LogarithmNeperien(Node) :
 
     def derivate(self, symbol) :
         return Divisor([self.input.derivate(symbol), self.input])
+'''
 
 class Logarithm(Node) :
     def __init__(self, input) :
         self.input = input[0]
-        if input[1] == None :
+        if len(input) < 2 :
             self.base = Scalar([np.e])
         else :
             self.base = input[1]
@@ -167,6 +170,14 @@ class Logarithm(Node) :
 
     def derivate(self, symbol) :
         return Divisor([LogarithmNeperien([self.input]), LogarithmNeperien([self.base])]).derivate(symbol)
+
+class LogarithmNeperien(Logarithm) :
+    def update_symbol(self) :
+        self.symbol = '(ln(' + self.input.update_symbol() + '))'
+        return self.symbol
+
+    def derivate(self, symbol) :
+        return Divisor([self.input.derivate(symbol), self.input])
 
 class Cos(Node) :
     def __init__(self, input) :
@@ -216,13 +227,13 @@ class Tan(Node) :
 
 if __name__ == '__main__' :
 
-    x = Placeholder('x')
-    u = Placeholder('u')
-    a = Scalar([3])
+    #f1 = Logarithm([Scalar([10]), Placeholder('x')])
+    f1 = LogarithmNeperien([Placeholder('u')])
 
-    f1 = Power([x, a]) 
+    feed_dict = {'x':2, 'u':3}
 
     print(f1.update_symbol())
-    print(f1.compute({'x': 2}))
-    print(f1.derivate('x').update_symbol())
-    print(f1.derivate('x').compute({'x':2}))
+    print(f1.compute(feed_dict))
+    print(f1.derivate('u').update_symbol())
+    print(f1.derivate('u').compute(feed_dict))
+
