@@ -150,7 +150,12 @@ class Logarithm(Node) :
         return self.symbol
 
     def compute(self, feed_dict) :
-        return np.log(self.input.compute(feed_dict)) / np.log(self.base.compute(feed_dict))
+        arg_value = self.input.compute(feed_dict)
+        base_value = self.base.compute(feed_dict)
+        if arg_value > 0 and base_value > 0 and base_value != 1 :
+            return np.log(arg_value) / np.log(base_value)
+        else :
+            return np.nan
 
     def derivate(self, symbol) :
         return Divisor([LogarithmNeperien([self.input]), LogarithmNeperien([self.base])]).derivate(symbol)
@@ -211,10 +216,9 @@ class Tan(Node) :
 
 if __name__ == '__main__' :
 
-    #f1 = Logarithm([Scalar([10]), Placeholder('x')])
-    f1 = LogarithmNeperien([Placeholder('u')])
+    f1 = Logarithm([Placeholder('x'), Placeholder('u')])
 
-    feed_dict = {'x':2, 'u':3}
+    feed_dict = {'x':2, 'u':0.2}
 
     print(f1.update_symbol())
     print(f1.compute(feed_dict))
