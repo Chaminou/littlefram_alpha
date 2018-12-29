@@ -20,6 +20,9 @@ class Node :
             expression = expression.derivate(symbol)
         return expression
 
+    def get_placeholder(self) :
+        raise NotImplemented
+
 class Placeholder(Node):
     def __init__(self, symbol) :
         self.symbol = symbol
@@ -39,6 +42,9 @@ class Placeholder(Node):
         else :
             return Scalar([0])
 
+    def get_placeholder(self) :
+        return set([self])
+
 class Scalar(Node) :
     def __init__(self, value) :
         self.value = value[0]
@@ -54,16 +60,27 @@ class Scalar(Node) :
     def derivate(self, symbol) :
         return Scalar([0])
 
+    def get_placeholder(self) :
+        return set()
+
 class Operator(Node) :
     def __init__(self, input) :
         self.input1 = input[0]
         self.input2 = input[1]
-
-class Sommator(Operator):
-    def __init__(self, input):
-        super().__init__(input)
         self.update_symbol()
 
+    def get_placeholder(self) :
+        return self.input1.get_placeholder() | self.input2.get_placeholder()
+
+class Function(Node) :
+    def __init__(self, input) :
+        self.input = input[0]
+        self.update_symbol()
+
+    def get_placeholder(self) :
+        return self.input.get_placeholder()
+
+class Sommator(Operator):
     def update_symbol(self) :
         self.symbol = '(' + self.input1.update_symbol() + "+" + self.input2.update_symbol() + ')'
         return self.symbol
@@ -74,11 +91,8 @@ class Sommator(Operator):
     def derivate(self, symbol) :
         return Sommator([self.input1.derivate(symbol), self.input2.derivate(symbol)])
 
-class Substractor(Operator):
-    def __init__(self, input):
-        super().__init__(input)
-        self.update_symbol()
 
+class Substractor(Operator):
     def update_symbol(self) :
         self.symbol = '(' + self.input1.update_symbol() + "-" + self.input2.update_symbol() + ')'
         return self.symbol
@@ -90,10 +104,6 @@ class Substractor(Operator):
         return Substractor([self.input1.derivate(symbol), self.input2.derivate(symbol)])
 
 class Multiplicator(Operator) :
-    def __init__(self, input):
-        super().__init__(input)
-        self.update_symbol()
-
     def update_symbol(self) :
         self.symbol = '(' + self.input1.update_symbol() + "*" + self.input2.update_symbol() + ')'
         return self.symbol
@@ -105,10 +115,6 @@ class Multiplicator(Operator) :
         return Sommator([Multiplicator([self.input1.derivate(symbol), self.input2]), Multiplicator([self.input1, self.input2.derivate(symbol)])])
 
 class Divisor(Operator) :
-    def __init__(self, input):
-        super().__init__(input)
-        self.update_symbol()
-
     def update_symbol(self) :
         self.symbol = '(' + self.input1.update_symbol() + "/" + self.input2.update_symbol() + ')'
         return self.symbol
@@ -121,10 +127,6 @@ class Divisor(Operator) :
 
 
 class Power(Operator) :
-    def __init__(self, input):
-        super().__init__(input)
-        self.update_symbol()
-
     def update_symbol(self) :
         self.symbol = '(' + self.input1.update_symbol() + "^" + self.input2.update_symbol() + ')'
         return self.symbol
@@ -160,6 +162,9 @@ class Logarithm(Node) :
     def derivate(self, symbol) :
         return Divisor([LogarithmNeperien([self.input]), LogarithmNeperien([self.base])]).derivate(symbol)
 
+    def get_placeholder(self) :
+        return self.input.get_placeholder() | self.base.get_placeholder()
+
 class LogarithmNeperien(Logarithm) :
     def update_symbol(self) :
         self.symbol = '(ln(' + self.input.update_symbol() + '))'
@@ -168,11 +173,7 @@ class LogarithmNeperien(Logarithm) :
     def derivate(self, symbol) :
         return Divisor([self.input.derivate(symbol), self.input])
 
-class Cos(Node) :
-    def __init__(self, input) :
-        self.input = input[0]
-        self.update_symbol()
-
+class Cos(Function) :
     def update_symbol(self) :
         self.symbol = '(cos(' + self.input.update_symbol() + '))'
         return self.symbol
@@ -183,11 +184,7 @@ class Cos(Node) :
     def derivate(self, symbol) :
         return Multiplicator([Multiplicator([Scalar([-1]), Sin([self.input])]), self.input.derivate(symbol)])
 
-class Sin(Node) :
-    def __init__(self, input) :
-        self.input = input[0]
-        self.update_symbol()
-
+class Sin(Function) :
     def update_symbol(self) :
         self.symbol = '(sin(' + self.input.update_symbol() + '))'
         return self.symbol
@@ -198,11 +195,7 @@ class Sin(Node) :
     def derivate(self, symbol) :
         return Multiplicator([Cos([self.input]), self.input.derivate(symbol)])
 
-class Tan(Node) :
-    def __init__(self, input) :
-        self.input = input[0]
-        self.update_symbol()
-
+class Tan(Function) :
     def update_symbol(self) :
         self.symbol = '(tan(' + self.input.update_symbol() + '))'
         return self.symbol
@@ -225,3 +218,5 @@ if __name__ == '__main__' :
     print(f1.derivate('u').update_symbol())
     print(f1.derivate('u').compute(feed_dict))
 
+    for i in f1.get_placeholder() :
+        print(i.symbol)
