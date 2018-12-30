@@ -37,16 +37,16 @@ class Placeholder(Node):
 
     def derivate(self, symbol) :
         if self.symbol == symbol :
-            return Scalar(1)
+            return Scalar([1])
         else :
-            return Scalar(0)
+            return Scalar([0])
 
     def get_placeholder(self) :
         return set([self])
 
 class Scalar(Node) :
     def __init__(self, value) :
-        self.value = value
+        self.value = value[0]
         self.update_symbol()
 
     def update_symbol(self) :
@@ -57,15 +57,15 @@ class Scalar(Node) :
         return self.value
 
     def derivate(self, symbol) :
-        return Scalar(0)
+        return Scalar([0])
 
     def get_placeholder(self) :
         return set()
 
 class Operator(Node) :
-    def __init__(self, input1, input2) :
-        self.input1 = input1
-        self.input2 = input2
+    def __init__(self, input) :
+        self.input1 = input[0]
+        self.input2 = input[1]
         self.update_symbol()
 
     def get_placeholder(self) :
@@ -73,7 +73,7 @@ class Operator(Node) :
 
 class Function(Node) :
     def __init__(self, input) :
-        self.input = input
+        self.input = input[0]
         self.update_symbol()
 
     def get_placeholder(self) :
@@ -88,7 +88,7 @@ class Sommator(Operator):
         return self.input1.compute(**feed_dict) + self.input2.compute(**feed_dict)
 
     def derivate(self, symbol) :
-        return Sommator(self.input1.derivate(symbol), self.input2.derivate(symbol))
+        return Sommator([self.input1.derivate(symbol), self.input2.derivate(symbol)])
 
 
 class Substractor(Operator):
@@ -100,7 +100,7 @@ class Substractor(Operator):
         return self.input1.compute(**feed_dict) - self.input2.compute(**feed_dict)
 
     def derivate(self, symbol) :
-        return Substractor(self.input1.derivate(symbol), self.input2.derivate(symbol))
+        return Substractor([self.input1.derivate(symbol), self.input2.derivate(symbol)])
 
 class Multiplicator(Operator) :
     def update_symbol(self) :
@@ -111,7 +111,7 @@ class Multiplicator(Operator) :
         return self.input1.compute(**feed_dict) * self.input2.compute(**feed_dict)
 
     def derivate(self, symbol) :
-        return Sommator(Multiplicator(self.input1.derivate(symbol), self.input2), Multiplicator(self.input1, self.input2.derivate(symbol)))
+        return Sommator([Multiplicator([self.input1.derivate(symbol), self.input2]), Multiplicator([self.input1, self.input2.derivate(symbol)])])
 
 class Divisor(Operator) :
     def update_symbol(self) :
@@ -122,7 +122,7 @@ class Divisor(Operator) :
         return self.input1.compute(**feed_dict) / self.input2.compute(**feed_dict)
 
     def derivate(self, symbol) :
-        return Divisor(Substractor(Multiplicator(self.input1.derivate(symbol), self.input2), Multiplicator(self.input1, self.input2.derivate(symbol))), Power(self.input2, Scalar(2)))
+        return Divisor([Substractor([Multiplicator([self.input1.derivate(symbol), self.input2]), Multiplicator([self.input1, self.input2.derivate(symbol)])]), Power([self.input2, Scalar([2])])])
 
 
 class Power(Operator) :
@@ -134,16 +134,16 @@ class Power(Operator) :
         return self.input1.compute(**feed_dict) ** self.input2.compute(**feed_dict)
 
     def derivate(self, symbol) :
-        return Multiplicator(Power(self.input1, self.input2), Sommator(Multiplicator(self.input1.derivate(symbol), Divisor(self.input2, self.input1)), Multiplicator(self.input2.derivate(symbol), LogarithmNeperien(self.input1))))
+        return Multiplicator([Power([self.input1, self.input2]), Sommator([Multiplicator([self.input1.derivate(symbol), Divisor([self.input2, self.input1])]), Multiplicator([self.input2.derivate(symbol), LogarithmNeperien([self.input1])])])])
 
 
 class Logarithm(Node) :
-    def __init__(self, input, base = None) :
-        self.input = input
-        if not base:
-            self.base = Scalar(np.e)
+    def __init__(self, input) :
+        self.input = input[0]
+        if len(input) < 2 :
+            self.base = Scalar([np.e])
         else :
-            self.base = base
+            self.base = input[1]
         self.update_symbol()
 
     def update_symbol(self) :
@@ -159,7 +159,7 @@ class Logarithm(Node) :
             return np.nan
 
     def derivate(self, symbol) :
-        return Divisor(LogarithmNeperien(self.input), LogarithmNeperien(self.base)).derivate(symbol)
+        return Divisor([LogarithmNeperien([self.input]), LogarithmNeperien([self.base])]).derivate(symbol)
 
     def get_placeholder(self) :
         return self.input.get_placeholder() | self.base.get_placeholder()
@@ -170,7 +170,7 @@ class LogarithmNeperien(Logarithm) :
         return self.symbol
 
     def derivate(self, symbol) :
-        return Divisor(self.input.derivate(symbol), self.input)
+        return Divisor([self.input.derivate(symbol), self.input])
 
 class Cos(Function) :
     def update_symbol(self) :
@@ -181,7 +181,7 @@ class Cos(Function) :
         return np.cos(self.input.compute(**feed_dict))
 
     def derivate(self, symbol) :
-        return Multiplicator(Multiplicator(Scalar(-1), Sin(self.input)), self.input.derivate(symbol))
+        return Multiplicator([Multiplicator([Scalar([-1]), Sin([self.input])]), self.input.derivate(symbol)])
 
 class Sin(Function) :
     def update_symbol(self) :
@@ -192,7 +192,7 @@ class Sin(Function) :
         return np.sin(self.input.compute(**feed_dict))
 
     def derivate(self, symbol) :
-        return Multiplicator(Cos(self.input), self.input.derivate(symbol))
+        return Multiplicator([Cos([self.input]), self.input.derivate(symbol)])
 
 class Tan(Function) :
     def update_symbol(self) :
@@ -203,12 +203,12 @@ class Tan(Function) :
         return np.tan(self.input.compute(**feed_dict))
 
     def derivate(self, symbol) :
-        return Divisor(Sin(self.input), Cos(self.input)).derivate(symbol)
+        return Divisor([Sin([self.input]), Cos([self.input])]).derivate(symbol)
 
 
 if __name__ == '__main__' :
 
-    f1 = Logarithm(Placeholder('x'), Placeholder('u'))
+    f1 = Logarithm([Placeholder('x'), Placeholder('u')])
 
     feed_dict = {'x':2, 'u':0.2}
 
