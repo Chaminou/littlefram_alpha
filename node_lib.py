@@ -1,4 +1,3 @@
-
 import numpy as np
 
 class Node :
@@ -34,7 +33,7 @@ class Placeholder(Node):
         try :
             return feed_dict[self.symbol]
         except :
-            raise 'YAY'
+            raise 'Error: %s not given in the list of symbols.' % self.symbol
 
     def derivate(self, symbol) :
         if self.symbol == symbol :
