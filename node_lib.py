@@ -107,7 +107,10 @@ class Multiplicator(Operator) :
         return self.symbol
 
     def compute(self, feed_dict) :
-        return self.input1.compute(feed_dict) * self.input2.compute(feed_dict)
+        if (isinstance(self.input1, Scalar) and self.input1.value == 0) or (isinstance(self.input2, Scalar) and self.input2.value == 0) :
+            return 0
+        else :
+            return self.input1.compute(feed_dict) * self.input2.compute(feed_dict)
 
     def derivate(self, symbol) :
         return Sommator([Multiplicator([self.input1.derivate(symbol), self.input2]), Multiplicator([self.input1, self.input2.derivate(symbol)])])
