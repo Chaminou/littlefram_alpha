@@ -4,12 +4,6 @@ class Node :
     def __init__(self):
         raise NotImplementedError
 
-    def sign(self):
-        raise NotImplementedError
-
-    def reduce(self) :
-        raise NotImplementedError
-
     def update_symbol(self) :
         raise NotImplementedError
 
