@@ -26,12 +26,6 @@ class Placeholder(Node):
     def __init__(self, symbol) :
         self.symbol = symbol
 
-    def sign(self):
-        return None
-
-    def reduce(self) :
-        return self
-
     def update_symbol(self) :
         return self.symbol
 
@@ -54,17 +48,6 @@ class Scalar(Node) :
     def __init__(self, value) :
         self.value = value[0]
         self.update_symbol()
-
-    def sign(self):
-        if self.value < 0:
-            return -1
-        elif self.value == 0:
-            return 0
-        else:
-            return 1
-
-    def reduce(self) :
-        return self
 
     def update_symbol(self) :
         self.symbol = '(' + str(self.value) + ')'
