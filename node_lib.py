@@ -79,6 +79,17 @@ class Function(Node) :
     def get_placeholder(self) :
         return self.input.get_placeholder()
 
+class Negate(Function) :
+    def update_symbol(self) :
+        self.symbol = '(-' + self.input.update_symbol() + ')'
+        return self.symbol
+
+    def compute(self, feed_dict) :
+        return -1 * self.input.compute(feed_dict)
+
+    def derivate(self, symbol) :
+        return Negate([self.input.derivate(symbol)])
+
 class Sommator(Operator):
     def update_symbol(self) :
         self.symbol = '(' + self.input1.update_symbol() + "+" + self.input2.update_symbol() + ')'
@@ -90,7 +101,13 @@ class Sommator(Operator):
     def derivate(self, symbol) :
         return Sommator([self.input1.derivate(symbol), self.input2.derivate(symbol)])
 
-class Substractor(Operator):
+class Substractor(Sommator) :
+    def __init__(self, input) :
+        self.input1 = input[0]
+        self.input2 = Negate([input[1]])
+        self.update_symbol()
+
+    '''
     def update_symbol(self) :
         self.symbol = '(' + self.input1.update_symbol() + "-" + self.input2.update_symbol() + ')'
         return self.symbol
@@ -100,6 +117,7 @@ class Substractor(Operator):
 
     def derivate(self, symbol) :
         return Substractor([self.input1.derivate(symbol), self.input2.derivate(symbol)])
+    '''
 
 class Multiplicator(Operator) :
     def update_symbol(self) :
@@ -211,14 +229,10 @@ class Tan(Function) :
 
 if __name__ == '__main__' :
 
-    f1 = Logarithm([Placeholder('x'), Placeholder('u')])
+    x = Placeholder('x')
+    n = Scalar([3])
 
-    feed_dict = {'x':2, 'u':0.2}
+    f = Substractor([n, x])
 
-    print(f1.update_symbol())
-    print(f1.compute(feed_dict))
-    print(f1.derivate('u').update_symbol())
-    print(f1.derivate('u').compute(feed_dict))
-
-    for i in f1.get_placeholder() :
-        print(i.symbol)
+    print(f.symbol)
+    print(f.derivate('x').symbol)
