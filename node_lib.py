@@ -22,6 +22,9 @@ class Node :
     def get_placeholder(self) :
         raise NotImplemented
 
+    def reduce(self) :
+        raise NotImplemented
+
 class Placeholder(Node):
     def __init__(self, symbol) :
         self.symbol = symbol
@@ -44,6 +47,9 @@ class Placeholder(Node):
     def get_placeholder(self) :
         return set([self])
 
+    def reduce(self) :
+        return self
+
 class Scalar(Node) :
     def __init__(self, value) :
         self.value = value[0]
@@ -62,6 +68,9 @@ class Scalar(Node) :
     def get_placeholder(self) :
         return set()
 
+    def reduce(self) :
+        return self
+
 class Operator(Node) :
     def __init__(self, input) :
         self.input1 = input[0]
@@ -71,6 +80,10 @@ class Operator(Node) :
     def get_placeholder(self) :
         return self.input1.get_placeholder() | self.input2.get_placeholder()
 
+    def reduce_inputs(self) :
+        self.input1 = self.input1.reduce()
+        self.input2 = self.input2.reduce()
+
 class Function(Node) :
     def __init__(self, input) :
         self.input = input[0]
@@ -78,6 +91,14 @@ class Function(Node) :
 
     def get_placeholder(self) :
         return self.input.get_placeholder()
+    
+    def reduce_input(self) :
+        self.input = self.input.reduce()
+
+    def reduce(self) :
+        self.reduce_input()
+        return self
+
 
 class Negate(Function) :
     def update_symbol(self) :
@@ -90,6 +111,12 @@ class Negate(Function) :
     def derivate(self, symbol) :
         return Negate([self.input.derivate(symbol)])
 
+    def reduce(self) :
+        self.reduce_input()
+        if isinstance(self.input, Scalar) :
+            return Scalar([-1*self.input.value])
+        return self
+            
 class Sommator(Operator):
     def update_symbol(self) :
         self.symbol = '(' + self.input1.update_symbol() + "+" + self.input2.update_symbol() + ')'
@@ -100,6 +127,10 @@ class Sommator(Operator):
 
     def derivate(self, symbol) :
         return Sommator([self.input1.derivate(symbol), self.input2.derivate(symbol)])
+
+    def reduce(self) :
+        self.reduce_inputs()
+        return self
 
 class Substractor(Sommator) :
     def __init__(self, input) :
@@ -133,6 +164,10 @@ class Multiplicator(Operator) :
     def derivate(self, symbol) :
         return Sommator([Multiplicator([self.input1.derivate(symbol), self.input2]), Multiplicator([self.input1, self.input2.derivate(symbol)])])
 
+    def reduce(self) :
+        self.reduce_inputs()
+        return self
+
 class Divisor(Operator) :
     def update_symbol(self) :
         self.symbol = '(' + self.input1.update_symbol() + "/" + self.input2.update_symbol() + ')'
@@ -143,7 +178,10 @@ class Divisor(Operator) :
 
     def derivate(self, symbol) :
         return Divisor([Substractor([Multiplicator([self.input1.derivate(symbol), self.input2]), Multiplicator([self.input1, self.input2.derivate(symbol)])]), Power([self.input2, Scalar([2])])])
-
+    
+    def reduce(self) :
+        self.reduce_inputs()
+        return self
 
 class Power(Operator) :
     def update_symbol(self) :
@@ -156,6 +194,9 @@ class Power(Operator) :
     def derivate(self, symbol) :
         return Multiplicator([Power([self.input1, self.input2]), Sommator([Multiplicator([self.input1.derivate(symbol), Divisor([self.input2, self.input1])]), Multiplicator([self.input2.derivate(symbol), LogarithmNeperien([self.input1])])])])
 
+    def reduce(self) :
+        self.reduce_inputs()
+        return self
 
 class Logarithm(Node) :
     def __init__(self, input) :
@@ -183,6 +224,11 @@ class Logarithm(Node) :
 
     def get_placeholder(self) :
         return self.input.get_placeholder() | self.base.get_placeholder()
+
+    def reduce(self) :
+        self.input = self.input.reduce()
+        self.base = self.base.reduce()
+        return self
 
 class LogarithmNeperien(Logarithm) :
     def update_symbol(self) :
@@ -236,3 +282,8 @@ if __name__ == '__main__' :
 
     print(f.symbol)
     print(f.derivate('x').symbol)
+    print(f.compute({'x': 6}))
+    print(f.derivate('x').compute({'x': 6}))
+    print(f.reduce().symbol)
+    print(Negate([Scalar([10])]).symbol)
+    print(Negate([Scalar([10])]).reduce().symbol)
