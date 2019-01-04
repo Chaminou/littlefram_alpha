@@ -98,8 +98,7 @@ class Operator(Node) :
         return self.input1.get_placeholder() | self.input2.get_placeholder()
 
     def reduce_inputs(self) :
-        self.input1 = self.input1.reduce()
-        self.input2 = self.input2.reduce()
+        return self.input1.reduce(), self.input2.reduce()
 
     def print(self, depth_level=0) :
         print('-' * depth_level + str(type(self)))
@@ -113,14 +112,7 @@ class Function(Node) :
         self.update_symbol()
 
     def get_placeholder(self) :
-        return self.input.get_placeholder()
-    
-    def reduce_input(self) :
-        self.input = self.input.reduce()
-
-    def reduce(self) :
-        self.reduce_input()
-        return self
+        return self.input.get_placeholder()    
 
     def print(self, depth_level=0) :
         print('-' * depth_level + self.symbol)
@@ -138,10 +130,10 @@ class Negate(Function) :
         return Negate([self.input.derivate(symbol)])
 
     def reduce(self) :
-        self.reduce_input()
-        if isinstance(self.input, Scalar) :
-            return Scalar([-1*self.input.value])
-        return self
+        new_input = self.input.reduce()
+        if isinstance(new_input, Scalar) :
+            return Scalar([-1*new_input.value])
+        return Negate([new_input])
             
 class Sommator(Operator):
     def update_symbol(self) :
@@ -189,8 +181,8 @@ class Sommator(Operator):
             return new_node 
 
     def reduce(self) :
-        self.reduce_inputs()
-        scalar_list, complement_list = self.explore()
+        input1, input2 = self.reduce_inputs()
+        scalar_list, complement_list = Sommator([input1, input2]).explore()
         reduced_node = self.build_up(scalar_list, complement_list)
         return reduced_node
 
@@ -208,18 +200,6 @@ class Substractor(Sommator) :
         return self.symbol
 
 
-    '''
-    def update_symbol(self) :
-        self.symbol = '(' + self.input1.update_symbol() + "-" + self.input2.update_symbol() + ')'
-        return self.symbol
-
-    def compute(self, feed_dict) :
-        return self.input1.compute(feed_dict) - self.input2.compute(feed_dict)
-
-    def derivate(self, symbol) :
-        return Substractor([self.input1.derivate(symbol), self.input2.derivate(symbol)])
-    '''
-
 class Multiplicator(Operator) :
     def update_symbol(self) :
         self.symbol = '(' + self.input1.update_symbol() + "*" + self.input2.update_symbol() + ')'
@@ -235,8 +215,8 @@ class Multiplicator(Operator) :
         return Sommator([Multiplicator([self.input1.derivate(symbol), self.input2]), Multiplicator([self.input1, self.input2.derivate(symbol)])])
 
     def reduce(self) :
-        self.reduce_inputs()
-        return self
+        input1, input2 = self.reduce_inputs()
+        return Multiplicator([input1, input2])
 
 class Divisor(Operator) :
     def update_symbol(self) :
@@ -250,8 +230,8 @@ class Divisor(Operator) :
         return Divisor([Substractor([Multiplicator([self.input1.derivate(symbol), self.input2]), Multiplicator([self.input1, self.input2.derivate(symbol)])]), Power([self.input2, Scalar([2])])])
     
     def reduce(self) :
-        self.reduce_inputs()
-        return self
+        input1, input2 = self.reduce_inputs()
+        return Divisor([input1, input2])
 
 class Power(Operator) :
     def update_symbol(self) :
@@ -265,8 +245,9 @@ class Power(Operator) :
         return Multiplicator([Power([self.input1, self.input2]), Sommator([Multiplicator([self.input1.derivate(symbol), Divisor([self.input2, self.input1])]), Multiplicator([self.input2.derivate(symbol), LogarithmNeperien([self.input1])])])])
 
     def reduce(self) :
-        self.reduce_inputs()
-        return self
+        input1, input2 = self.reduce_inputs()
+        return Power([input1, input2])
+
 
 class Logarithm(Node) :
     def __init__(self, input) :
@@ -296,9 +277,7 @@ class Logarithm(Node) :
         return self.input.get_placeholder() | self.base.get_placeholder()
 
     def reduce(self) :
-        self.input = self.input.reduce()
-        self.base = self.base.reduce()
-        return self
+        return Logarithm([self.input.reduce(), self.base.reduce()])
 
     def print(self, depth_level=0) :
         print('-' * depth_level + self.symbol)
@@ -325,6 +304,9 @@ class Cos(Function) :
 
     def derivate(self, symbol) :
         return Multiplicator([Multiplicator([Scalar([-1]), Sin([self.input])]), self.input.derivate(symbol)])
+    
+    def reduce(self) :
+        return Cos([self.input.reduce()])
 
 class Sin(Function) :
     def update_symbol(self) :
@@ -337,6 +319,8 @@ class Sin(Function) :
     def derivate(self, symbol) :
         return Multiplicator([Cos([self.input]), self.input.derivate(symbol)])
 
+    def reduce(self) :
+        return Sin([self.input.reduce()])
 
 class Tan(Function) :
     def update_symbol(self) :
@@ -349,18 +333,22 @@ class Tan(Function) :
     def derivate(self, symbol) :
         return Divisor([Sin([self.input]), Cos([self.input])]).derivate(symbol)
 
+    def reduce(self) :
+        return Tan([self.input.reduce()])
+
+
 
 if __name__ == '__main__' :
-
+    # ((((x + 2) - 4) + 6) - x^2) + 1
+    # 5 + x - x^2
     x = Placeholder('x')
-    n = Scalar([3])
+    a = Sommator([Scalar([2]), x])
+    b = Substractor([a, Scalar([4])])
+    c = Sommator([Scalar([6]), b])
+    d = Substractor([c, Power([x, Scalar([2])])])
+    e = Sommator([Scalar([1]), d])
 
-    f = Substractor([n, x])
+    print(e.update_symbol())
+    reduced_e = e.reduce()
+    print(reduced_e.symbol)
 
-    print(f.symbol)
-    print(f.derivate('x').symbol)
-    print(f.compute({'x': 6}))
-    print(f.derivate('x').compute({'x': 6}))
-    print(f.reduce().symbol)
-    print(Negate([Scalar([10])]).symbol)
-    print(Negate([Scalar([10])]).reduce().symbol)
