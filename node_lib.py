@@ -138,6 +138,11 @@ class Substractor(Sommator) :
         self.input2 = Negate([input[1]])
         self.update_symbol()
 
+    def update_symbol(self) :
+        self.symbol = '(' + self.input1.update_symbol() + "-" + self.input2.input.update_symbol() + ')'
+        return self.symbol
+
+
     '''
     def update_symbol(self) :
         self.symbol = '(' + self.input1.update_symbol() + "-" + self.input2.update_symbol() + ')'
