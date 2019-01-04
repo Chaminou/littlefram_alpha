@@ -1,5 +1,12 @@
 import numpy as np
 
+def sum_scalar_list(scalar_list) :
+    sum = 0
+    for scalar in scalar_list :
+        sum += scalar.value
+    return Scalar([sum])
+
+
 class Node :
     def __init__(self):
         raise NotImplementedError
@@ -147,9 +154,45 @@ class Sommator(Operator):
     def derivate(self, symbol) :
         return Sommator([self.input1.derivate(symbol), self.input2.derivate(symbol)])
 
+    def explore(self) :
+        scalar_list = []
+        complement_list = []
+        for inpt in [self.input1, self.input2] :
+            if isinstance(inpt, Scalar) :
+                scalar_list.append(inpt)
+            elif isinstance(inpt, Sommator):
+                result_scalar, result_complement = inpt.explore()
+                if result_scalar != [] :
+                    scalar_list += result_scalar
+                if result_complement != [] :
+                    complement_list += result_complement
+            else :
+                complement_list.append(inpt)
+
+        return scalar_list, complement_list
+
+
+    def build_up(self, scalar_list, complement_list) :
+        if len(complement_list) == 0 :
+            return sum_scalar_list(scalar_list)
+        else :
+            neutral_element = Scalar([0])
+            new_node = Sommator([sum_scalar_list(scalar_list), neutral_element])
+            current_node = new_node
+            for index in range(len(complement_list)) :
+                if index != len(complement_list) - 1 :
+                    current_node.input2 = Sommator([complement_list[index], neutral_element])
+                    current_node = current_node.input2
+                else :
+                    current_node.input2 = complement_list[index]
+            new_node.update_symbol()
+            return new_node 
+
     def reduce(self) :
         self.reduce_inputs()
-        return self
+        scalar_list, complement_list = self.explore()
+        reduced_node = self.build_up(scalar_list, complement_list)
+        return reduced_node
 
 class Substractor(Sommator) :
     def __init__(self, input) :
