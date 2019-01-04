@@ -139,7 +139,10 @@ class Substractor(Sommator) :
         self.update_symbol()
 
     def update_symbol(self) :
-        self.symbol = '(' + self.input1.update_symbol() + "-" + self.input2.input.update_symbol() + ')'
+        if isinstance(self.input2, Negate) :
+            self.symbol = '(' + self.input1.update_symbol() + "-" + self.input2.input.update_symbol() + ')'
+        else :
+            self.symbol = '(' + self.input1.update_symbol() + "+" + self.input2.update_symbol() + ')'
         return self.symbol
 
 
