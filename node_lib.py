@@ -25,6 +25,9 @@ class Node :
     def reduce(self) :
         raise NotImplemented
 
+    def print(self, depth_level=0) :
+        raise NotImplemented
+
 class Placeholder(Node):
     def __init__(self, symbol) :
         self.symbol = symbol
@@ -50,6 +53,10 @@ class Placeholder(Node):
     def reduce(self) :
         return self
 
+    def print(self, depth_level=0) :
+        print('-' * depth_level + self.symbol)
+
+
 class Scalar(Node) :
     def __init__(self, value) :
         self.value = value[0]
@@ -71,6 +78,9 @@ class Scalar(Node) :
     def reduce(self) :
         return self
 
+    def print(self, depth_level=0) :
+        print('-' * depth_level + self.symbol)
+
 class Operator(Node) :
     def __init__(self, input) :
         self.input1 = input[0]
@@ -83,6 +93,12 @@ class Operator(Node) :
     def reduce_inputs(self) :
         self.input1 = self.input1.reduce()
         self.input2 = self.input2.reduce()
+
+    def print(self, depth_level=0) :
+        print('-' * depth_level + str(type(self)))
+        for i in range(len([self.input1, self.input2])) :
+            print('-' * (depth_level+1) + 'input' + str(i) + ':')
+            [self.input1, self.input2][i].print(depth_level+2)
 
 class Function(Node) :
     def __init__(self, input) :
@@ -99,6 +115,9 @@ class Function(Node) :
         self.reduce_input()
         return self
 
+    def print(self, depth_level=0) :
+        print('-' * depth_level + self.symbol)
+        self.input.print(depth_level+1)
 
 class Negate(Function) :
     def update_symbol(self) :
@@ -237,6 +256,13 @@ class Logarithm(Node) :
         self.input = self.input.reduce()
         self.base = self.base.reduce()
         return self
+
+    def print(self, depth_level=0) :
+        print('-' * depth_level + self.symbol)
+        print('-' * (depth_level+1) + "input:")
+        self.input.print(depth_level+2)
+        print('-' * (depth_level+1) + "base:")
+        self.base.print(depth_level+2)
 
 class LogarithmNeperien(Logarithm) :
     def update_symbol(self) :
