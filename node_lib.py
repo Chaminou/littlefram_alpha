@@ -6,6 +6,18 @@ def sum_scalar_list(scalar_list) :
         sum += scalar.value
     return Scalar([sum])
 
+def mul_scalar_list(scalar_list) :
+    prod = 1
+    for scalar in scalar_list :
+        prod *= scalar.value
+    return Scalar([prod])
+
+def print_symbol_list(*lists) :
+    for list in lists :
+        print(list)
+        for element in list :
+            print(element.symbol)
+        print()
 
 class Node :
     def __init__(self):
@@ -101,7 +113,7 @@ class Operator(Node) :
         return self.input1.reduce(), self.input2.reduce()
 
     def print(self, depth_level=0) :
-        print('-' * depth_level + str(type(self)))
+        print('-' * depth_level + str(type(self))[17:-2])
         for i in range(len([self.input1, self.input2])) :
             print('-' * (depth_level+1) + 'input' + str(i) + ':')
             [self.input1, self.input2][i].print(depth_level+2)
@@ -214,10 +226,50 @@ class Multiplicator(Operator) :
     def derivate(self, symbol) :
         return Sommator([Multiplicator([self.input1.derivate(symbol), self.input2]), Multiplicator([self.input1, self.input2.derivate(symbol)])])
 
+    def explore(self) :
+        scalar_list = []
+        complement_list = []
+        for inpt in [self.input1, self.input2] :
+            if isinstance(inpt, Scalar) :
+                scalar_list.append(inpt)
+            elif isinstance(inpt, Multiplicator):
+                result_scalar, result_complement = inpt.explore()
+                if result_scalar != [] :
+                    scalar_list += result_scalar
+                if result_complement != [] :
+                    complement_list += result_complement
+            else :
+                complement_list.append(inpt)
+
+        return scalar_list, complement_list
+
+    def build_up(self, scalar_list, complement_list) :
+        if len(complement_list) == 0 :
+            return mul_scalar_list(scalar_list)
+        else :
+            neutral_element = Scalar([1])
+            new_node = Multiplicator([mul_scalar_list(scalar_list), neutral_element])
+            current_node = new_node
+            for index in range(len(complement_list)) :
+                if index != len(complement_list) - 1 :
+                    current_node.input2 = Multiplicator([complement_list[index], neutral_element])
+                    current_node = current_node.input2
+                else :
+                    current_node.input2 = complement_list[index]
+            new_node.update_symbol()
+            return new_node 
+
+    def reduce(self) :
+        input1, input2 = self.reduce_inputs()
+        scalar_list, complement_list = Multiplicator([input1, input2]).explore()
+        reduced_node = self.build_up(scalar_list, complement_list)
+        return reduced_node
+    
+    '''
     def reduce(self) :
         input1, input2 = self.reduce_inputs()
         return Multiplicator([input1, input2])
-
+    '''
 class Divisor(Operator) :
     def update_symbol(self) :
         self.symbol = '(' + self.input1.update_symbol() + "/" + self.input2.update_symbol() + ')'
@@ -339,16 +391,24 @@ class Tan(Function) :
 
 
 if __name__ == '__main__' :
-    # ((((x + 2) - 4) + 6) - x^2) + 1
-    # 5 + x - x^2
     x = Placeholder('x')
     a = Sommator([Scalar([2]), x])
-    b = Substractor([a, Scalar([4])])
-    c = Sommator([Scalar([6]), b])
-    d = Substractor([c, Power([x, Scalar([2])])])
+    b = Sommator([a, Scalar([4])])
+    c = Sommator([Scalar([7]), b])
+    d = Sommator([c, Power([x, Scalar([2])])])
+    #d = Multiplicator([c, Power([x, Scalar([2])])])
     e = Sommator([Scalar([1]), d])
 
     print(e.update_symbol())
-    reduced_e = e.reduce()
-    print(reduced_e.symbol)
+    reduced = e.reduce()
+    print(reduced.symbol)
 
+    print(e.compute({'x': 2}))
+    print(reduced.compute({'x': 2}))
+
+    #print(d.update_symbol())
+    #reduced = d.reduce()
+    #print(reduced.symbol)
+
+    #print(d.compute({'x': 2}))
+    #print(reduced.compute({'x': 2}))
