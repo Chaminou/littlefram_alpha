@@ -190,7 +190,10 @@ class Sommator(Operator):
                 else :
                     current_node.input2 = complement_list[index]
             new_node.update_symbol()
-            return new_node 
+            if new_node.input1.value == 0 :
+                return new_node.input2
+            else :
+                return new_node 
 
     def reduce(self) :
         input1, input2 = self.reduce_inputs()
@@ -257,7 +260,10 @@ class Multiplicator(Operator) :
                 else :
                     current_node.input2 = complement_list[index]
             new_node.update_symbol()
-            return new_node 
+            if new_node.input1.value == 1 :
+                return new_node.input2
+            else :
+                return new_node 
 
     def reduce(self) :
         input1, input2 = self.reduce_inputs()
@@ -395,9 +401,10 @@ if __name__ == '__main__' :
     a = Sommator([Scalar([2]), x])
     b = Sommator([a, Scalar([4])])
     c = Sommator([Scalar([7]), b])
-    d = Sommator([c, Power([x, Scalar([2])])])
+    d = Multiplicator([c, Power([x, Scalar([2])])])
     #d = Multiplicator([c, Power([x, Scalar([2])])])
-    e = Sommator([Scalar([1]), d])
+    #e = Sommator([Scalar([1]), d])
+    e = d
 
     print(e.update_symbol())
     reduced = e.reduce()
