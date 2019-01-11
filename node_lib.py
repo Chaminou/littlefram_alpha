@@ -39,13 +39,13 @@ class Node :
         return expression
 
     def get_placeholder(self) :
-        raise NotImplemented
+        raise NotImplementedError
 
     def reduce(self) :
-        raise NotImplemented
+        raise NotImplementedError
 
     def print(self, depth_level=0) :
-        raise NotImplemented
+        raise NotImplementedError
 
 class Placeholder(Node):
     def __init__(self, symbol) :
@@ -124,7 +124,7 @@ class Function(Node) :
         self.update_symbol()
 
     def get_placeholder(self) :
-        return self.input.get_placeholder()    
+        return self.input.get_placeholder()
 
     def print(self, depth_level=0) :
         print('-' * depth_level + self.symbol)
@@ -146,7 +146,7 @@ class Negate(Function) :
         if isinstance(new_input, Scalar) :
             return Scalar([-1*new_input.value])
         return Negate([new_input])
-            
+
 class Sommator(Operator):
     def update_symbol(self) :
         self.symbol = '(' + self.input1.update_symbol() + "+" + self.input2.update_symbol() + ')'
@@ -193,7 +193,7 @@ class Sommator(Operator):
             if new_node.input1.value == 0 :
                 return new_node.input2
             else :
-                return new_node 
+                return new_node
 
     def reduce(self) :
         input1, input2 = self.reduce_inputs()
@@ -272,7 +272,7 @@ class Multiplicator(Operator) :
         scalar_list, complement_list = Multiplicator([input1, input2]).explore()
         reduced_node = self.build_up(scalar_list, complement_list)
         return reduced_node
-    
+
 class Divisor(Operator) :
     def update_symbol(self) :
         self.symbol = '(' + self.input1.update_symbol() + "/" + self.input2.update_symbol() + ')'
@@ -283,7 +283,7 @@ class Divisor(Operator) :
 
     def derivate(self, symbol) :
         return Divisor([Substractor([Multiplicator([self.input1.derivate(symbol), self.input2]), Multiplicator([self.input1, self.input2.derivate(symbol)])]), Power([self.input2, Scalar([2])])])
-    
+
     def reduce(self) :
         input1, input2 = self.reduce_inputs()
         return Divisor([input1, input2])
@@ -359,7 +359,7 @@ class Cos(Function) :
 
     def derivate(self, symbol) :
         return Multiplicator([Multiplicator([Scalar([-1]), Sin([self.input])]), self.input.derivate(symbol)])
-    
+
     def reduce(self) :
         return Cos([self.input.reduce()])
 
