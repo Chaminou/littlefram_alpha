@@ -262,8 +262,10 @@ class Multiplicator(Operator) :
             new_node.update_symbol()
             if new_node.input1.value == 1 :
                 return new_node.input2
+            elif new_node.input1.value == 0 :
+                return Scalar([0])
             else :
-                return new_node 
+                return new_node
 
     def reduce(self) :
         input1, input2 = self.reduce_inputs()
@@ -271,11 +273,6 @@ class Multiplicator(Operator) :
         reduced_node = self.build_up(scalar_list, complement_list)
         return reduced_node
     
-    '''
-    def reduce(self) :
-        input1, input2 = self.reduce_inputs()
-        return Multiplicator([input1, input2])
-    '''
 class Divisor(Operator) :
     def update_symbol(self) :
         self.symbol = '(' + self.input1.update_symbol() + "/" + self.input2.update_symbol() + ')'
@@ -406,11 +403,12 @@ if __name__ == '__main__' :
     #e = Sommator([Scalar([1]), d])
     e = d
 
-    print(e.update_symbol())
-    reduced = e.reduce()
+    normal = e.derivate('x')
+    reduced = e.derivate('x').reduce()
+    print(normal.symbol)
     print(reduced.symbol)
 
-    print(e.compute({'x': 2}))
+    print(normal.compute({'x': 2}))
     print(reduced.compute({'x': 2}))
 
     #print(d.update_symbol())
